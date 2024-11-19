@@ -43,7 +43,7 @@ List<Offset> getStrokeOutlinePoints(
       : 0.0;
 
   /// The minimum allowed distance between points (squared)
-  final minDistance = pow(options.size * options.smoothing, 2);
+  final minDistance = pow(options.size * options.smoothing, 2) / 2;
 
   // Our collected left and right points
   final leftPoints = <PointVector>[];
@@ -114,11 +114,6 @@ List<Offset> getStrokeOutlinePoints(
     final vector = points[i].vector;
     final distance = points[i].distance;
     final runningLength = points[i].runningLength;
-
-    // Removes noise from the end of the line
-    if (i < points.length - 1 && totalLength - runningLength < options.size) {
-      continue;
-    }
 
     /**
      * Calculate the radius
@@ -282,9 +277,9 @@ List<Offset> getStrokeOutlinePoints(
 
   if (points.length == 1) {
     if (!(taperStart > 0 || taperEnd > 0) || options.isComplete) {
-      final start = firstPoint.project(
-        (firstPoint - lastPoint).perpendicular().unit(),
-        -(firstRadius ?? radius),
+      final start = PointVector.fromOffset(
+        offset: firstPoint.translate(firstRadius ?? radius, 0),
+        pressure: firstPoint.pressure,
       );
       final List<PointVector> dotPts = [];
       const step = 1 / 13;
@@ -345,9 +340,9 @@ List<Offset> getStrokeOutlinePoints(
   } else if (options.end.cap) {
     // Draw the round end cap
     final start = lastPoint.project(direction, radius);
-    const step = 1 / 29;
+    const step = 1 / 13;
     for (double t = step; t <= 1; t += step) {
-      endCap.add(start.rotAround(lastPoint, fixedPi * 3 * t));
+      endCap.add(start.rotAround(lastPoint, fixedPi * t));
     }
   } else {
     // Draw the flat end cap
